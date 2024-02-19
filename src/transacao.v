@@ -90,13 +90,30 @@ pub mut:
 
 @[inline]
 pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
-	mut req := TransacaoRequest.from_json(body) or { return Response.bad_request() }
-
-	mut cliente := Cliente.find(app.db, cliente_id) or { return Response.not_found() }
-	transacao := req.to_transacao(cliente.id) or { return Response.bad_request() }
-	cliente.efetuar_transacao(transacao) or { return Response.unprocessable() }
-	cliente.save(app.db) or { return Response.internal_error() }
-	transacao.save(app.db) or { return Response.internal_error() }
+	mut req := TransacaoRequest.from_json(body) or {
+		debug('[BAD_REQUEST] ${err.msg()} ${body}')
+		return Response.bad_request()
+	}
+	mut cliente := Cliente.find(app.db, cliente_id) or {
+		debug('[NOT_FOUND] ${err.msg()} ${body}')
+		return Response.not_found()
+	}
+	transacao := req.to_transacao(cliente.id) or {
+		debug('[BAD_REQUEST]${err.msg()} ${body}')
+		return Response.bad_request()
+	}
+	cliente.efetuar_transacao(transacao) or {
+		debug('[UNPROCESSABLE] ${err.msg()} ${body}')
+		return Response.unprocessable()
+	}
+	cliente.save(app.db) or {
+		debug('[INTERNAL_SERVER_ERROR] ${err.msg()} ${body}')
+		return Response.internal_error()
+	}
+	transacao.save(app.db) or {
+		debug('[INTERNAL_SERVER_ERROR]${err.msg()} ${body}')
+		return Response.internal_error()
+	}
 
 	return Response.json(TransacaoResponse{
 		limite: cliente.limite

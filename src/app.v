@@ -67,9 +67,7 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 	start := time.new_stopwatch()
 	response := app.handler(req)
 
-	if start.elapsed() > time.second {
-		println('Request took too long: ${start.elapsed()} \nRequest: [${req.method}] ${req.path}')
-	}
+	debug('[${req.method}] ${req.path} - ${start.elapsed()}')
 
 	res.write_string('HTTP/1.1 ${int(response.code)} ${response.code.str()}\r\n')
 	for key, value in response.headers {
