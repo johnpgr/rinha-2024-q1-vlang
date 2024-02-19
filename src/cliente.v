@@ -21,20 +21,21 @@ pub fn Cliente.new(limite int, saldo int) &Cliente {
 }
 
 pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
-	if t.tipo == TipoTransacao.debito {
-		if c.saldo - t.valor < -(c.limite) {
-			return error('ERROR: Transação inválida, saldo insuficiente')
+	match t.tipo {
+		.debito {
+			if t.tipo == TipoTransacao.debito {
+				if c.saldo - t.valor < -c.limite {
+					return error('ERROR: Transação inválida, saldo insuficiente')
+				}
+
+				c.saldo -= t.valor
+				return
+			}
 		}
-
-		c.saldo -= t.valor
-		return
+		.credito {
+			c.saldo += t.valor
+		}
 	}
-
-	if c.limite - t.valor < 0 {
-		return error('ERROR: Transação inválida, limite insuficiente')
-	}
-
-	c.limite -= t.valor
 }
 
 pub fn (c &Cliente) save(conn orm.Connection) ! {
@@ -54,6 +55,7 @@ pub fn (c &Cliente) save(conn orm.Connection) ! {
 	}!
 }
 
+@[direct_array_access]
 pub fn Cliente.find(conn orm.Connection, id int) ?&Cliente {
 	found := sql conn {
 		select from Cliente where id == id
@@ -66,16 +68,16 @@ pub fn Cliente.find(conn orm.Connection, id int) ?&Cliente {
 	return &found[0]
 }
 
-pub struct ExtratoSaldo {
+pub struct Saldo {
 pub mut:
-	valor        int       @[required]
+	total        int       @[required]
 	data_extrato time.Time @[required]
 	limite       int       @[required]
 }
 
-pub struct ExtratoResponse {
+pub struct Extrato {
 pub mut:
-	saldo              ExtratoSaldo @[required]
+	saldo              Saldo @[required]
 	ultimas_transacoes []Transacao  @[required]
 }
 
@@ -86,9 +88,9 @@ pub fn (app &App) handle_extrato(cliente_id int) &Response {
 		return Response.internal_error()
 	}
 
-	return Response.json(ExtratoResponse{
-		saldo: ExtratoSaldo{
-			valor: cliente.saldo
+	return Response.json(Extrato{
+		saldo: Saldo{
+			total: cliente.saldo
 			data_extrato: time.now()
 			limite: cliente.limite
 		}

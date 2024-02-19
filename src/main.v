@@ -1,13 +1,8 @@
 module main
 
 import picoev
-import os
 
-const port = if os.getenv('PORT').int() == 0 {
-	9999
-} else {
-	os.getenv('PORT').int()
-}
+const port = 8080
 
 fn main() {
 	mut app := App{

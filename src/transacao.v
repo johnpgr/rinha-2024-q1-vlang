@@ -1,12 +1,19 @@
 module main
 
 import time
-import json
+import x.json2
 import orm
 
 pub enum TipoTransacao {
 	debito
 	credito
+}
+
+pub fn (t TipoTransacao) json_str() string {
+	match t {
+		.debito { return '"d"' }
+		.credito { return '"c"' }
+	}
 }
 
 @[inline]
@@ -28,7 +35,8 @@ pub fn TipoTransacao.from_str(s string) !TipoTransacao {
 
 @[table: 'transacao']
 pub struct Transacao {
-	cliente_id   int
+	cliente_id int
+pub mut:
 	valor        int
 	tipo         TipoTransacao @[sql_type: 'SMALLINT']
 	descricao    string
@@ -36,16 +44,31 @@ pub struct Transacao {
 }
 
 @[inline]
-pub fn Transacao.new(cliente_id int, valor int, tipo TipoTransacao, descricao string) &Transacao {
-	t := Transacao{
+pub fn Transacao.new(cliente_id int, valor int, tipo TipoTransacao, descricao string) !&Transacao {
+	if descricao.len > 10 {
+		return error('Descrição muito longa')
+	}
+	if valor <= 0 {
+		return error('Valor inválido')
+	}
+
+	return &Transacao{
 		cliente_id: cliente_id
 		valor: valor
 		tipo: tipo
 		descricao: descricao
 		realizada_em: time.now()
 	}
+}
 
-	return &t
+@[inline]
+pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
+	json_obj := json2.raw_decode(json_str)!.as_map()
+	descricao := json_obj['descricao']!.str()
+	tipo := TipoTransacao.from_str(json_obj['tipo']!.str())!
+	valor := json_obj['valor']!.int()
+
+	return Transacao.new(cliente_id, valor, tipo, descricao)
 }
 
 @[inline]
@@ -62,45 +85,15 @@ pub fn (t &Transacao) save(conn orm.Connection) ! {
 	}!
 }
 
-pub struct TransacaoRequest {
-pub mut:
-	valor     int    @[required]
-	tipo      string @[required]
-	descricao string @[required]
-}
-
-@[inline]
-pub fn TransacaoRequest.from_json(data string) !&TransacaoRequest {
-	transacao := json.decode(TransacaoRequest, data) or { return error(err.msg()) }
-	return &transacao
-}
-
-@[inline]
-pub fn (mut t TransacaoRequest) to_transacao(cliente_id int) !&Transacao {
-	tipo_transacao := TipoTransacao.from_str(t.tipo) or { return error(err.msg()) }
-
-	return Transacao.new(cliente_id, t.valor, tipo_transacao, t.descricao)
-}
-
-pub struct TransacaoResponse {
-pub mut:
-	limite int
-	saldo  int
-}
-
 @[inline]
 pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
-	mut req := TransacaoRequest.from_json(body) or {
+	transacao := Transacao.from_json(body, cliente_id) or {
 		debug('[BAD_REQUEST] ${err.msg()} ${body}')
 		return Response.bad_request()
 	}
 	mut cliente := Cliente.find(app.db, cliente_id) or {
 		debug('[NOT_FOUND] ${err.msg()} ${body}')
 		return Response.not_found()
-	}
-	transacao := req.to_transacao(cliente.id) or {
-		debug('[BAD_REQUEST]${err.msg()} ${body}')
-		return Response.bad_request()
 	}
 	cliente.efetuar_transacao(transacao) or {
 		debug('[UNPROCESSABLE] ${err.msg()} ${body}')
@@ -115,8 +108,8 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
 		return Response.internal_error()
 	}
 
-	return Response.json(TransacaoResponse{
-		limite: cliente.limite
-		saldo: cliente.saldo
+	return Response.json({
+		'limite': cliente.limite
+		'saldo':  cliente.saldo
 	})
 }

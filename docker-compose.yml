@@ -6,7 +6,6 @@ services:
     # image: greidinger/rinha-2024-q1-vlang:latest
     hostname: api1
     environment:
-      - PORT=8080
       - DB_PORT=5432
       - DB_USER=user
       - DB_PASS=1234
@@ -16,26 +15,21 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    ports:
-      - "8080:8080"
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "50MB"
+          cpus: "0.3"
+          memory: "10MB"
 
   api2:
     <<: *api
     hostname: api2
     environment:
-      - PORT=8081
       - DB_PORT=5432
       - DB_USER=user
       - DB_PASS=1234
       - DB_NAME=rinha-2024-q1
       - DB_HOST=database
-    ports:
-      - "8081:8080"
 
   nginx:
     image: nginx
@@ -50,8 +44,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "50MB"
+          cpus: "0.4"
+          memory: "100MB"
 
   database:
     image: postgres:latest
@@ -65,13 +59,11 @@ services:
       test: ["CMD-SHELL", "pg_isready -U user -d rinha-2024-q1"]
       interval: 5s
       timeout: 5s
-    ports:
-      - "5432:5432"
     deploy:
       resources:
         limits:
-          cpus: "0.75"
-          memory: "400MB"
+          cpus: "0.5"
+          memory: "430MB"
     volumes:
       - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql

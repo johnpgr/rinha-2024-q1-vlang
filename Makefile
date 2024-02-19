@@ -9,7 +9,7 @@ TARGET=$(BIN_DIR)/$(PROJECT_NAME)
 .PHONY: dev prod test test-only
 
 dev: $(TARGET)
-	@v -o $(TARGET) watch -d trace_orm --silent --clear run ./$(SRC_DIR)
+	@v -o $(TARGET) watch -d debug -d trace_orm --silent --clear run ./$(SRC_DIR)
 
 build: $(TARGET)
 	@v ./$(SRC_DIR) -prod -o $(TARGET)
