@@ -1,12 +1,13 @@
 module main
 
+import os
 import db.pg
 
-const db_name = "rinha-2024-q1"
-const db_user = "user"
-const db_pass = "1234"
-const db_host = "0.0.0.0"
-const db_port = 5432
+const db_name = os.getenv_opt('DB_NAME') or { panic('DB_NAME not set') }
+const db_user = os.getenv_opt('DB_USER') or { panic('DB_USER not set') }
+const db_pass = os.getenv_opt('DB_PASS') or { panic('DB_PASS not set') }
+const db_host = os.getenv_opt('DB_HOST') or { panic('DB_HOST not set') }
+const db_port = os.getenv_opt('DB_PORT') or { panic('DB_PORT not set') }.int()
 
 fn create_connection() pg.DB {
 	return pg.connect(
@@ -16,41 +17,4 @@ fn create_connection() pg.DB {
 		password: db_pass
 		dbname: db_name
 	) or { panic(err) }
-}
-
-fn init_tables() {
-	conn := create_connection()
-
-	sql conn {
-		drop table Cliente
-		drop table Transacao
-	} or { panic('Failed to drop tables') }
-
-	sql conn {
-		create table Cliente
-		create table Transacao
-	} or { panic('Failed to create tables') }
-}
-
-fn insert_test_clientes() {
-	limites := [100000, 80000, 1000000, 10000000, 500000]
-
-	mut clientes := []Cliente{}
-
-	for limite in limites {
-		cliente := Cliente{
-			limite: u64(limite)
-			saldo: 0
-		}
-
-		clientes << cliente
-	}
-
-	conn := create_connection()
-
-	for cliente in clientes {
-		sql conn {
-			insert cliente into Cliente
-		} or { panic(err)}
-	}
 }

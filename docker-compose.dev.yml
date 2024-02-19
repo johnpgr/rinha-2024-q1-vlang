@@ -1,0 +1,25 @@
+version: "3.5"
+
+networks:
+  rinha:
+    driver: bridge
+
+services:
+  database:
+    image: postgres:latest
+    hostname: database
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: user
+      POSTGRES_DB: rinha-2024-q1
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dev -d rinha" ]
+      interval: 5s
+      timeout: 5s
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf

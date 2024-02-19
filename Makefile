@@ -11,9 +11,14 @@ TARGET=$(BIN_DIR)/$(PROJECT_NAME)
 dev: $(TARGET)
 	@v -o $(TARGET) watch -d trace_orm --silent --clear run ./$(SRC_DIR)
 
-prod: $(TARGET)
-	@v ./$(SRC_DIR) --prod -o $(TARGET)
-	@./$(TARGET)
+build: $(TARGET)
+	@v ./$(SRC_DIR) -prod -o $(TARGET)
+
+build-clang: $(TARGET)
+	@v ./$(SRC_DIR) -prod -cc clang -o $(TARGET)
+
+run: $(TARGET)
+	@$(TARGET)
 
 test: $(TARGET)
 	@v test ./$(SRC_DIR)
