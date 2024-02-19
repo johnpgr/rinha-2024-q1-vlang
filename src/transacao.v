@@ -72,9 +72,9 @@ pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
 }
 
 @[inline]
-pub fn Transacao.find_many(conn orm.Connection, cliente_id int, limit int) ![]Transacao {
+pub fn Transacao.last_ten(conn orm.Connection, cliente_id int) ![]Transacao {
 	return sql conn {
-		select from Transacao where cliente_id == cliente_id order by realizada_em desc limit limit
+		select from Transacao where cliente_id == cliente_id order by realizada_em desc limit 10
 	}!
 }
 

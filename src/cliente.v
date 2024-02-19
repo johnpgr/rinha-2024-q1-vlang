@@ -11,6 +11,7 @@ pub mut:
 	saldo  int
 }
 
+@[inline]
 pub fn Cliente.new(limite int, saldo int) &Cliente {
 	c := Cliente{
 		limite: limite
@@ -20,17 +21,16 @@ pub fn Cliente.new(limite int, saldo int) &Cliente {
 	return &c
 }
 
+@[inline]
 pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 	match t.tipo {
 		.debito {
-			if t.tipo == TipoTransacao.debito {
-				if c.saldo - t.valor < -c.limite {
-					return error('ERROR: Transação inválida, saldo insuficiente')
-				}
-
-				c.saldo -= t.valor
-				return
+			if Int(c.saldo - t.valor).abs() < c.limite {
+				return error('ERROR: Transação inválida, saldo insuficiente')
 			}
+
+			c.saldo -= t.valor
+			return
 		}
 		.credito {
 			c.saldo += t.valor
@@ -38,24 +38,14 @@ pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 	}
 }
 
+@[inline]
 pub fn (c &Cliente) save(conn orm.Connection) ! {
-	count := sql conn {
-		select count from Cliente where id == c.id
-	}!
-
-	if count != 0 {
-		sql conn {
-			update Cliente set limite = c.limite, saldo = c.saldo where id == c.id
-		}!
-		return
-	}
-
 	sql conn {
-		insert c into Cliente
+		update Cliente set limite = c.limite, saldo = c.saldo where id == c.id
 	}!
 }
 
-@[direct_array_access]
+@[direct_array_access; inline]
 pub fn Cliente.find(conn orm.Connection, id int) ?&Cliente {
 	found := sql conn {
 		select from Cliente where id == id
@@ -68,28 +58,26 @@ pub fn Cliente.find(conn orm.Connection, id int) ?&Cliente {
 	return &found[0]
 }
 
-pub struct Saldo {
-pub mut:
-	total        int       @[required]
-	data_extrato time.Time @[required]
-	limite       int       @[required]
-}
-
 pub struct Extrato {
 pub mut:
-	saldo              Saldo @[required]
-	ultimas_transacoes []Transacao  @[required]
+	saldo struct {
+		total        int       @[required]
+		data_extrato time.Time @[required]
+		limite       int       @[required]
+	} @[required]
+
+	ultimas_transacoes []Transacao @[required]
 }
 
 @[inline]
 pub fn (app &App) handle_extrato(cliente_id int) &Response {
 	cliente := Cliente.find(app.db, cliente_id) or { return Response.not_found() }
-	ultimas_transacoes := Transacao.find_many(app.db, cliente_id, 10) or {
+	ultimas_transacoes := Transacao.last_ten(app.db, cliente_id) or {
 		return Response.internal_error()
 	}
 
 	return Response.json(Extrato{
-		saldo: Saldo{
+		saldo: struct {
 			total: cliente.saldo
 			data_extrato: time.now()
 			limite: cliente.limite
