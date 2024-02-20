@@ -57,7 +57,6 @@ pub fn Transacao.new(cliente_id int, valor int, tipo TipoTransacao, descricao st
 		valor: valor
 		tipo: tipo
 		descricao: descricao
-		realizada_em: time.now()
 	}
 }
 

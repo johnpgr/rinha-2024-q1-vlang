@@ -1,7 +1,7 @@
 module main
 
-@[if debug]
-pub fn debug(s string) {
+@[if debug; inline]
+pub fn debug[T](s T) {
 	println(s)
 }
 
