@@ -18,3 +18,17 @@ fn create_connection() pg.DB {
 		dbname: db_name
 	) or { panic(err) }
 }
+
+type DB = pg.DB
+
+fn (db &DB) cliente_lock(cliente_id int) ! {
+	db.exec_param(r'SELECT pg_advisory_xact_lock($1)', cliente_id.str())!
+}
+
+fn (db &DB) begin() ! {
+	db.exec('BEGIN')!
+}
+
+fn (db &DB) commit() ! {
+	db.exec('COMMIT')!
+}
