@@ -43,8 +43,7 @@ pub fn Cliente.find(conn pg.DB, id int) ?&Cliente {
 
 	mut cliente := found[0]
 
-	mut saldo := Saldo.find(conn, found[0].id)
-	cliente.saldo = saldo
+	cliente.saldo = Saldo.find(conn, found[0].id)
 
 	return &cliente
 }
