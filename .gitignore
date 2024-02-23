@@ -8,7 +8,7 @@ repos
 *.dll
 
 # Ignore load-test files
-load-test/
+load-test/user-files/results/
 
 # Ignore binary output folders
 bin/
