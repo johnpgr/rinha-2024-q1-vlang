@@ -11,13 +11,12 @@ pub mut:
 	saldo  &Saldo @[required; skip]
 }
 
-@[inline]
 pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 	tipo_transacao := TipoTransacao.from_str(t.tipo)!
 
 	match tipo_transacao {
 		.debito {
-			has_limit := (c.saldo.valor - t.valor) >= (c.limite * -1)
+			has_limit := c.saldo.valor - t.valor > -c.limite
 
 			if !has_limit {
 				return error('ERROR: Transação inválida, saldo insuficiente')
@@ -31,7 +30,6 @@ pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 	}
 }
 
-@[direct_array_access; inline]
 pub fn Cliente.find(conn pg.DB, id int) ?&Cliente {
 	found := sql conn {
 		select from Cliente where id == id
@@ -56,7 +54,6 @@ pub mut:
 	valor int
 }
 
-@[direct_array_access; inline]
 pub fn Saldo.find(conn pg.DB, cliente_id int) &Saldo {
 	saldo := sql conn {
 		select from Saldo where cliente_id == cliente_id
@@ -65,7 +62,6 @@ pub fn Saldo.find(conn pg.DB, cliente_id int) &Saldo {
 	return &saldo[0]
 }
 
-@[inline]
 pub fn (mut s Saldo) save(conn pg.DB) ! {
 	result := conn.exec_param_many(r'
 		UPDATE "saldo" SET "valor" = $1 WHERE "cliente_id" = $2
@@ -79,7 +75,6 @@ pub fn (mut s Saldo) save(conn pg.DB) ! {
 		return error('ERROR: Falha ao atualizar saldo')
 	}
 
-	// int() casts i64 to int; parse_int(10,32) parses string to a base 10 int 32 bits
 	// this should in theory never panic
 	s.valor = int((novo_saldo as string).parse_int(10, 32) or { panic(err) })
 }

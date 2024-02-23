@@ -1,18 +1,17 @@
 module main
 
-import picoev
+import vweb
 
 const port = 8080
 
 fn main() {
-	mut app := App{
-		db: DB.connect()
+	app := &App{
+		db_handle: vweb.database_pool(handler: DB.connect)
 	}
-	mut server := picoev.new(
-		port: port
-		cb: app.callback
-	) or { panic(err) }
 
-	println('Server started on port ' + port.str())
-	server.serve()
+	vweb.run_at(app, vweb.RunParams{
+		host: '0.0.0.0'
+		port: port
+		family: .ip
+	}) or { panic(err) }
 }

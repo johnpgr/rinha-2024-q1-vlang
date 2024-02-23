@@ -1,6 +1,6 @@
 module main
 
-@[if debug; inline]
+@[if debug]
 pub fn debug[T](s T) {
 	println(s)
 }
