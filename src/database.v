@@ -21,7 +21,6 @@ fn DB.connect() DB {
 	) or { panic(err) }
 }
 
-
 fn (db &DB) cliente_lock(cliente_id int) ! {
 	db.exec_param(r'SELECT pg_advisory_xact_lock($1)', cliente_id.str())!
 }

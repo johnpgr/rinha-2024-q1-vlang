@@ -4,6 +4,11 @@ import time
 
 @[inline]
 pub fn (app &App) handle_extrato(cliente_id int) &Response {
+	mut ts := C.timespec{}
+	C.clock_getres(C.CLOCK_REALTIME_COARSE, &ts)
+
+	utc_time_now := time.unix_nanosecond(i64(ts.tv_sec), int(ts.tv_nsec))
+
 	cliente := Cliente.find(app.db, cliente_id) or { return Response.not_found() }
 	ultimas_transacoes := Transacao.last_ten(app.db, cliente_id) or {
 		debug('[INTERNAL_SERVER_ERROR] ${err.msg()}')
@@ -13,7 +18,7 @@ pub fn (app &App) handle_extrato(cliente_id int) &Response {
 	return Response.json(Extrato{
 		saldo: struct {
 			total: cliente.saldo.valor
-			data_extrato: time.now()
+			data_extrato: utc_time_now
 			limite: cliente.limite
 		}
 		ultimas_transacoes: ultimas_transacoes

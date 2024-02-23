@@ -25,7 +25,9 @@ fn (app App) handler(req picohttpparser.Request) &Response {
 	}
 
 	mut path_parts := req.path.split('/')
-	if path_parts.len == 0 { return Response.not_found() }
+	if path_parts.len == 0 {
+		return Response.not_found()
+	}
 	path_parts.drop(1)
 
 	if path_parts[0] != 'clientes' || path_parts.len < 2 {
@@ -61,7 +63,9 @@ fn (app App) handler(req picohttpparser.Request) &Response {
 fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttpparser.Response) {
 	response := app.handler(req)
 	mut builder := strings.new_builder(20)
-	defer { unsafe { builder.free() } }
+	defer {
+		unsafe { builder.free() }
+	}
 
 	builder.write_string('HTTP/1.1 ')
 	builder.write_string(int(response.code).str())
@@ -81,12 +85,27 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 
 @[inline]
 fn Response.json[T](data T) &Response {
+	// REVIEW - choose the better cap size. This is important for performance
+	mut buffer := []u8{cap: 200}
+
+	defer {
+		unsafe { buffer.free() }
+	}
+
+	// This make string encode faster
+	// REVIEW - veify if you will not have especial caracteres to be handle
+	encoder := json2.Encoder{
+		escape_unicode: false
+	}
+
+	enc.encode_value(data, mut buffer)!
+
 	return &Response{
 		code: .ok
 		headers: {
 			'Content-Type': 'application/json'
 		}
-		body: json2.encode(data)
+		body: buffer.bytestr()
 	}
 }
 

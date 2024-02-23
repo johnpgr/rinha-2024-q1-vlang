@@ -46,6 +46,11 @@ pub mut:
 
 @[inline]
 pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
+	mut ts := C.timespec{}
+	C.clock_getres(C.CLOCK_REALTIME_COARSE, &ts)
+
+	utc_time_now := time.unix_nanosecond(i64(ts.tv_sec), int(ts.tv_nsec))
+
 	mut t := json.decode(Transacao, json_str)!
 
 	if t.descricao.len > 10 {
@@ -53,7 +58,7 @@ pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
 	}
 
 	t.cliente_id = cliente_id
-	t.realizada_em = time.now()
+	t.realizada_em = utc_time_now
 
 	return &t
 }
