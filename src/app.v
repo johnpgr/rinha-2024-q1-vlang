@@ -98,7 +98,10 @@ fn Response.json[T](data T) &Response {
 		escape_unicode: false
 	}
 
-	enc.encode_value(data, mut buffer)!
+	encoder.encode_value(data, mut buffer) or {
+		dump(err)
+		panic('erro no encode do json ${err}')
+	}
 
 	return &Response{
 		code: .ok

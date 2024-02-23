@@ -5,7 +5,7 @@ import time
 @[inline]
 pub fn (app &App) handle_extrato(cliente_id int) &Response {
 	mut ts := C.timespec{}
-	C.clock_getres(C.CLOCK_REALTIME_COARSE, &ts)
+	C.clock_gettime(C.CLOCK_REALTIME_COARSE, &ts)
 
 	utc_time_now := time.unix_nanosecond(i64(ts.tv_sec), int(ts.tv_nsec))
 

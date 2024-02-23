@@ -13,8 +13,8 @@ WORKDIR /opt/vlang
 
 RUN git clone --depth 1 https://github.com/vlang/v /opt/vlang
 
-# choose v version `tags/weekly.2024.06`
-RUN git fetch --all --tags && git checkout tags/weekly.2024.06 && make && v -version
+# choose v version `tags/weekly.2024.08`
+RUN git fetch --all --tags && git checkout tags/weekly.2024.08 && make && v -version
 
 RUN ln -s /opt/vlang/v /usr/bin/v
 
