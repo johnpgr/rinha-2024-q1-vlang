@@ -60,3 +60,14 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
 		'saldo':  cliente.saldo.valor
 	})
 }
+
+@[inline]
+fn (app &App) handle_admin_reset() &Response {
+	db := DB(app.db)
+	db.begin() or { panic(err) }
+	db.exec('UPDATE "saldo" SET "valor" = 0') or { panic(err) }
+	db.exec('DELETE FROM "transacao"') or { panic(err) }
+	db.commit() or { panic(err) }
+
+	return Response.ok()
+}
