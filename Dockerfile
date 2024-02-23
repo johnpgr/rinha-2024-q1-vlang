@@ -25,6 +25,6 @@ COPY ./src /app/src
 #Create a build directory
 RUN mkdir /app/bin
 
-RUN v /app/src -d debug -prod -o /app/bin/app
+RUN v /app/src -prod -o /app/bin/app
 
 ENTRYPOINT ["/app/bin/app"]

@@ -39,7 +39,7 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
 
 	db.begin() or { panic(err) }
 
-	db.cliente_lock(cliente_id) or { panic(err) }
+	db.xact_lock(cliente_id.str()) or { panic(err) }
 
 	transacao.save(db) or {
 		debug('[INTERNAL_SERVER_ERROR]${err.msg()} ${body}')
