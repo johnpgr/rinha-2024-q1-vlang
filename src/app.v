@@ -1,11 +1,10 @@
 module main
 
-import strings
 import picohttpparser
 import net.http
 import x.json2
 import db.pg
-import time
+import strings
 
 pub struct App {
 pub:
@@ -21,26 +20,27 @@ pub mut:
 
 @[inline]
 fn (app App) handler(req picohttpparser.Request) &Response {
-	mut path_parts := req.path.split('/')
-	if path_parts.len == 0 {
-		return Response.not_found()
+	if req.path == '/admin/reset' && req.method == http.Method.post.str() {
+		return app.handle_admin_reset()
 	}
+
+	mut path_parts := req.path.split('/')
+	if path_parts.len == 0 { return Response.not_found() }
 	path_parts.drop(1)
 
-	if path_parts.len != 3 || path_parts[0] != 'clientes' {
+	if path_parts[0] != 'clientes' || path_parts.len < 2 {
 		return Response.not_found()
 	}
 
 	curr_path := path_parts[2]
+	cliente_id := path_parts[1].int()
+
+	if cliente_id == 0 {
+		return Response.not_found()
+	}
 
 	if curr_path == 'transacoes' {
 		if req.method != http.Method.post.str() {
-			return Response.not_found()
-		}
-
-		cliente_id := path_parts[1].int()
-
-		if cliente_id == 0 {
 			return Response.not_found()
 		}
 
@@ -52,12 +52,6 @@ fn (app App) handler(req picohttpparser.Request) &Response {
 			return Response.not_found()
 		}
 
-		cliente_id := path_parts[1].int()
-
-		if cliente_id == 0 {
-			return Response.not_found()
-		}
-
 		return app.handle_extrato(cliente_id)
 	}
 
@@ -65,16 +59,22 @@ fn (app App) handler(req picohttpparser.Request) &Response {
 }
 
 fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttpparser.Response) {
-	start := time.new_stopwatch()
 	response := app.handler(req)
+	mut builder := strings.new_builder(20)
+	defer { unsafe { builder.free() } }
 
-	debug('[${req.method}] ${req.path} - ${start.elapsed()}')
+	builder.write_string('HTTP/1.1 ')
+	builder.write_string(int(response.code).str())
+	builder.write_string(' ')
+	builder.write_string(response.code.str())
+	builder.write_string('\r\n')
 
+	res.write_string(builder.str())
 
-	res.write_string('HTTP/1.1 ${int(response.code)} ${response.code.str()}\r\n')
 	for key, value in response.headers {
 		res.header(key, value)
 	}
+
 	res.body(response.body)
 	res.end()
 }
@@ -87,6 +87,13 @@ fn Response.json[T](data T) &Response {
 			'Content-Type': 'application/json'
 		}
 		body: json2.encode(data)
+	}
+}
+
+@[inline]
+fn Response.ok() &Response {
+	return &Response{
+		code: .ok
 	}
 }
 
