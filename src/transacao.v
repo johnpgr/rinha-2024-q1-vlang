@@ -47,6 +47,11 @@ pub mut:
 @[inline]
 pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
 	mut t := json.decode(Transacao, json_str)!
+
+	if t.descricao.len > 10 {
+		return error('ERROR: Descrição longa de mais')
+	}
+
 	t.cliente_id = cliente_id
 	t.realizada_em = time.now()
 

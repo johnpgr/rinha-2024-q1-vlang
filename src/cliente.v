@@ -8,7 +8,7 @@ pub struct Cliente {
 pub mut:
 	id     int    @[primary; sql: serial]
 	limite int
-	saldo  &Saldo @[required; skip]
+	saldo  &Saldo @[required; sql: '-']
 }
 
 @[inline]
