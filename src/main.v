@@ -6,7 +6,7 @@ const port = 8080
 
 fn main() {
 	mut app := App{
-		db: create_connection()
+		db: DB.connect()
 	}
 	mut server := picoev.new(
 		port: port

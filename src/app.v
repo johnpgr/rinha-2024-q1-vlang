@@ -1,5 +1,6 @@
 module main
 
+import strings
 import picohttpparser
 import net.http
 import x.json2
@@ -68,6 +69,7 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 	response := app.handler(req)
 
 	debug('[${req.method}] ${req.path} - ${start.elapsed()}')
+
 
 	res.write_string('HTTP/1.1 ${int(response.code)} ${response.code.str()}\r\n')
 	for key, value in response.headers {
