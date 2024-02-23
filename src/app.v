@@ -85,7 +85,6 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 
 @[inline]
 fn Response.json[T](data T) &Response {
-	// REVIEW - choose the better cap size. This is important for performance
 	mut buffer := []u8{cap: 200}
 
 	defer {
@@ -93,7 +92,6 @@ fn Response.json[T](data T) &Response {
 	}
 
 	// This make string encode faster
-	// REVIEW - veify if you will not have especial caracteres to be handle
 	encoder := json2.Encoder{
 		escape_unicode: false
 	}
