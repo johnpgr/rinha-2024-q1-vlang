@@ -37,21 +37,19 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
 
 	db := DB(app.db)
 
-	db.begin() or { panic(err) }
-
-	db.xact_lock(cliente_id.str()) or { panic(err) }
-
+	db.begin()
+	db.xact_lock(cliente_id.str())
 	transacao.save(db) or {
 		debug('[INTERNAL_SERVER_ERROR]${err.msg()} ${body}')
+		db.rollback()
 		return Response.internal_error()
 	}
-
 	cliente.saldo.save(db) or {
 		debug('[INTERNAL_SERVER_ERROR] ${err.msg()} ${body}')
+		db.rollback()
 		return Response.internal_error()
 	}
-
-	db.commit() or { panic(err) }
+	db.commit()
 
 	return Response.json({
 		'limite': cliente.limite
@@ -62,10 +60,10 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
 @[inline]
 fn (app &App) handle_admin_reset() &Response {
 	db := DB(app.db)
-	db.begin() or { panic(err) }
+	db.begin()
 	db.exec('UPDATE "saldo" SET "valor" = 0') or { panic(err) }
 	db.exec('DELETE FROM "transacao"') or { panic(err) }
-	db.commit() or { panic(err) }
+	db.commit()
 
 	return Response.ok()
 }

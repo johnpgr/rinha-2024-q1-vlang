@@ -21,14 +21,18 @@ fn DB.connect() DB {
 	) or { panic(err) }
 }
 
-fn (db DB) xact_lock(lock_id string) ! {
-	db.exec_param(r'SELECT pg_advisory_xact_lock($1)', lock_id)!
+fn (db DB) xact_lock(lock_id string) {
+	db.exec_param(r'SELECT pg_advisory_xact_lock($1)', lock_id) or { panic(err) }
 }
 
-fn (db DB) begin() ! {
-	db.exec('BEGIN')!
+fn (db DB) begin() {
+	db.exec('BEGIN') or { panic(err) }
 }
 
-fn (db DB) commit() ! {
-	db.exec('COMMIT')!
+fn (db DB) commit() {
+	db.exec('COMMIT') or { panic(err) }
+}
+
+fn (db DB) rollback() {
+	db.exec('ROLLBACK') or { panic(err) }
 }

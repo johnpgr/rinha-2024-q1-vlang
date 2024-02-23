@@ -65,7 +65,7 @@ pub fn Saldo.find(conn pg.DB, cliente_id int) &Saldo {
 	return &saldo[0]
 }
 
-@[inline]
+@[direct_array_access; inline]
 pub fn (mut s Saldo) save(conn pg.DB) ! {
 	result := conn.exec_param_many(r'
 		UPDATE "saldo" SET "valor" = $1 WHERE "cliente_id" = $2
