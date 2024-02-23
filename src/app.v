@@ -1,5 +1,6 @@
 module main
 
+import strings
 import picohttpparser
 import net.http
 import x.json2
@@ -11,7 +12,12 @@ pub:
 	db pg.DB @[required]
 }
 
-pub type Response = http.Response
+pub struct Response {
+pub mut:
+	code    http.Status = .not_found
+	headers map[string]string
+	body    string
+}
 
 @[inline]
 fn (app App) handler(req picohttpparser.Request) &Response {
@@ -64,8 +70,9 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 
 	debug('[${req.method}] ${req.path} - ${start.elapsed()}')
 
+
 	res.write_string('HTTP/1.1 ${int(response.code)} ${response.code.str()}\r\n')
-	for key, value in response.header.entries{
+	for key, value in response.headers {
 		res.header(key, value)
 	}
 	res.body(response.body)
@@ -74,39 +81,39 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 
 @[inline]
 fn Response.json[T](data T) &Response {
-	r := http.new_response(
-		header: http.new_header(key: .content_type, value: 'application/json')
+	return &Response{
+		code: .ok
+		headers: {
+			'Content-Type': 'application/json'
+		}
 		body: json2.encode(data)
-	)
-	return &r
+	}
 }
 
 @[inline]
 fn Response.internal_error() &Response {
-	r := http.new_response(status: .internal_server_error)
-	return &r
+	return &Response{
+		code: .internal_server_error
+	}
 }
 
 @[inline]
 fn Response.unprocessable() &Response {
-	r := http.new_response(
-		status: .unprocessable_entity
-	)
-	return &r
+	return &Response{
+		code: .unprocessable_entity
+	}
 }
 
 @[inline]
 fn Response.bad_request() &Response {
-	r := http.new_response(
-		status: .bad_request
-	)
-	return &r
+	return &Response{
+		code: .bad_request
+	}
 }
 
 @[inline]
 fn Response.not_found() &Response {
-	r := http.new_response(
-		status: .not_found
-	)
-	return &r
+	return &Response{
+		code: .not_found
+	}
 }
