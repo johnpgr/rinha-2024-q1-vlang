@@ -2,60 +2,91 @@ module main
 
 import time
 import json
+import math
 import db.pg
-
-pub enum TipoTransacao {
-	debito
-	credito
-}
-
-fn TipoTransacao.from_str(s string) !TipoTransacao {
-	match s {
-		'd' {
-			return TipoTransacao.debito
-		}
-		'c' {
-			return TipoTransacao.credito
-		}
-		else {
-			return error('ERRO: Tipo de transação inválido')
-		}
-	}
-}
-
-fn (t TipoTransacao) str() string {
-	match t {
-		.debito {
-			return 'd'
-		}
-		.credito {
-			return 'c'
-		}
-	}
-}
 
 @[table: 'transacao']
 pub struct Transacao {
 pub mut:
-	cliente_id   int       @[json: '-']
-	valor        int
-	tipo         string    @[sql_type: 'CHAR(1)']
-	descricao    string
-	realizada_em time.Time
+	cliente_id   int
+	valor        int       @[required]
+	tipo         string    @[required; sql_type: 'CHAR(1)']
+	descricao    string    @[required]
+	realizada_em time.Time @[required]
+}
+
+@[inline]
+pub fn (t &Transacao) to_response() &TransacaoResponse {
+	return &TransacaoResponse{
+		valor: t.valor
+		tipo: t.tipo
+		descricao: t.descricao
+		realizada_em: t.realizada_em
+	}
+}
+
+@[inline]
+pub fn (t []Transacao) to_response() []TransacaoResponse {
+	return t.map(*it.to_response())
+}
+
+pub struct TransacaoRequest {
+	valor     f64    @[required]
+	tipo      string @[required]
+	descricao string @[required]
+}
+
+pub struct TransacaoResponse {
+	valor        int       @[required]
+	tipo         string    @[required]
+	descricao    string    @[required]
+	realizada_em time.Time @[required]
+}
+
+@[inline]
+pub fn (t &TransacaoRequest) is_valid() bool {
+	if t.descricao.is_blank() || t.descricao.len > 10 {
+		return false
+	}
+
+	if t.valor < 0 || math.fmod(t.valor, 1) != 0 {
+		return false
+	}
+
+	return match t.tipo {
+		'd' {
+			true
+		}
+		'c' {
+			true
+		}
+		else {
+			false
+		}
+	}
+}
+
+@[inline]
+pub fn (t &TransacaoRequest) to_transacao(cliente_id int) &Transacao {
+	return &Transacao{
+		cliente_id: cliente_id
+		valor: int(t.valor)
+		tipo: t.tipo
+		descricao: t.descricao
+		realizada_em: fast_time_now()
+	}
 }
 
 @[inline]
 pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
-	mut t := json.decode(Transacao, json_str)!
-
-	if t.descricao.len > 10 {
-		return error('ERROR: Descrição longa de mais')
+	mut t_req := json.decode(TransacaoRequest, json_str)!
+	if !t_req.is_valid() {
+		return error('Falha ao validar transação')
 	}
 
-	t.cliente_id = cliente_id
-	t.realizada_em = fast_time_now()
+	t := t_req.to_transacao(cliente_id)
 
-	return &t
+	return t
 }
 
 @[inline]

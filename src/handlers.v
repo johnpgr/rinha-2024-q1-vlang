@@ -1,7 +1,7 @@
 module main
 
 @[inline]
-pub fn (app &App) handle_extrato(cliente_id int) &Response {
+pub fn (app &App) handle_extrato(cliente_id int) (string, &Response) {
 	cliente := Cliente.find(app.db, cliente_id) or { return Response.not_found() }
 	ultimas_transacoes := Transacao.last_ten(app.db, cliente_id) or {
 		debug('[INTERNAL_SERVER_ERROR] ${err.msg()}')
@@ -14,12 +14,12 @@ pub fn (app &App) handle_extrato(cliente_id int) &Response {
 			data_extrato: fast_time_now()
 			limite: cliente.limite
 		}
-		ultimas_transacoes: ultimas_transacoes
+		ultimas_transacoes: ultimas_transacoes.to_response()
 	})
 }
 
 @[inline]
-pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
+pub fn (app &App) handle_transacao(body string, cliente_id int) (string, &Response) {
 	transacao := Transacao.from_json(body, cliente_id) or {
 		debug('[BAD_REQUEST] ${err.msg()} ${body}')
 		return Response.bad_request()
@@ -58,7 +58,7 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) &Response {
 }
 
 @[inline]
-fn (app &App) handle_admin_reset() &Response {
+fn (app &App) handle_admin_reset() (string, &Response) {
 	db := DB(app.db)
 	db.begin()
 	db.exec('UPDATE "saldo" SET "valor" = 0') or { panic(err) }

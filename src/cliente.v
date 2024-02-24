@@ -13,10 +13,8 @@ pub mut:
 
 @[inline]
 pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
-	tipo_transacao := TipoTransacao.from_str(t.tipo)!
-
-	match tipo_transacao {
-		.debito {
+	match t.tipo {
+		'd' {
 			has_limit := (c.saldo.valor - t.valor) >= (c.limite * -1)
 
 			if !has_limit {
@@ -25,8 +23,11 @@ pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 
 			c.saldo.valor -= t.valor
 		}
-		.credito {
+		'c' {
 			c.saldo.valor += t.valor
+		}
+		else {
+			panic('WTF?')
 		}
 	}
 }
@@ -92,5 +93,5 @@ pub mut:
 		limite       int       @[required]
 	} @[required]
 
-	ultimas_transacoes []Transacao @[required]
+	ultimas_transacoes []TransacaoResponse @[required]
 }

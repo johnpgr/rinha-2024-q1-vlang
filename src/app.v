@@ -4,10 +4,15 @@ import picohttpparser
 import net.http
 import x.json2
 import db.pg
-import strings
+
+const response_head_ok = 'HTTP/1.1 200 OK\r\n'
+const response_head_not_found = 'HTTP/1.1 404 Not Found\r\n'
+const response_head_unprocessable = 'HTTP/1.1 422 Unprocessable Entity\r\n'
+const response_head_bad_request = 'HTTP/1.1 400 Bad Request\r\n'
+const response_internal_error = 'HTTP/1.1 500 Internal Server Error\r\n'
 
 pub struct App {
-pub:
+pub mut:
 	db pg.DB @[required]
 }
 
@@ -19,7 +24,7 @@ pub mut:
 }
 
 @[inline]
-fn (app App) handler(req picohttpparser.Request) &Response {
+fn (app App) handler(req picohttpparser.Request) (string, &Response) {
 	if req.path == '/admin/reset' && req.method == http.Method.post.str() {
 		return app.handle_admin_reset()
 	}
@@ -61,19 +66,9 @@ fn (app App) handler(req picohttpparser.Request) &Response {
 }
 
 fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttpparser.Response) {
-	response := app.handler(req)
-	mut builder := strings.new_builder(20)
-	defer {
-		unsafe { builder.free() }
-	}
+	response_head, response := app.handler(req)
 
-	builder.write_string('HTTP/1.1 ')
-	builder.write_string(int(response.code).str())
-	builder.write_string(' ')
-	builder.write_string(response.code.str())
-	builder.write_string('\r\n')
-
-	res.write_string(builder.str())
+	res.write_string(response_head)
 
 	for key, value in response.headers {
 		res.header(key, value)
@@ -84,7 +79,7 @@ fn (app App) callback(_ voidptr, req picohttpparser.Request, mut res picohttppar
 }
 
 @[inline]
-fn Response.json[T](data T) &Response {
+fn Response.json[T](data T) (string, &Response) {
 	mut buffer := []u8{cap: 200}
 
 	defer {
@@ -101,7 +96,7 @@ fn Response.json[T](data T) &Response {
 		panic('erro no encode do json ${err}')
 	}
 
-	return &Response{
+	return response_head_ok, &Response{
 		code: .ok
 		headers: {
 			'Content-Type': 'application/json'
@@ -111,36 +106,36 @@ fn Response.json[T](data T) &Response {
 }
 
 @[inline]
-fn Response.ok() &Response {
-	return &Response{
+fn Response.ok() (string, &Response) {
+	return response_head_ok, &Response{
 		code: .ok
 	}
 }
 
 @[inline]
-fn Response.internal_error() &Response {
-	return &Response{
+fn Response.internal_error() (string, &Response) {
+	return response_internal_error, &Response{
 		code: .internal_server_error
 	}
 }
 
 @[inline]
-fn Response.unprocessable() &Response {
-	return &Response{
+fn Response.unprocessable() (string, &Response) {
+	return response_head_unprocessable, &Response{
 		code: .unprocessable_entity
 	}
 }
 
 @[inline]
-fn Response.bad_request() &Response {
-	return &Response{
+fn Response.bad_request() (string, &Response) {
+	return response_head_bad_request, &Response{
 		code: .bad_request
 	}
 }
 
 @[inline]
-fn Response.not_found() &Response {
-	return &Response{
+fn Response.not_found() (string, &Response) {
+	return response_head_not_found, &Response{
 		code: .not_found
 	}
 }
