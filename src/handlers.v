@@ -34,6 +34,10 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) (string, &Respon
 		debug('[UNPROCESSABLE] ${err.msg()} ${body}')
 		return Response.unprocessable()
 	}
+	cliente.save(app.db) or {
+		debug('[INTERNAL_SERVER_ERROR]${err.msg()} ${body}')
+		return Response.internal_error()
+	}
 	transacao.save(app.db) or {
 		debug('[INTERNAL_SERVER_ERROR]${err.msg()} ${body}')
 		return Response.internal_error()
@@ -47,8 +51,8 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) (string, &Respon
 
 @[inline]
 fn (app &App) handle_admin_reset() (string, &Response) {
-	app.db.exec('UPDATE "saldo" SET "valor" = 0') or { panic(err) }
-	app.db.exec('DELETE FROM "transacao"') or { panic(err) }
+	app.db.exec('UPDATE cliente SET saldo = 0') or { panic(err) }
+	app.db.exec('DELETE FROM transacao') or { panic(err) }
 
 	return Response.ok()
 }

@@ -8,6 +8,7 @@ import db.sqlite
 @[table: 'transacao']
 pub struct Transacao {
 pub mut:
+	id           int       @[primary; sql: serial]
 	cliente_id   int
 	valor        int       @[required]
 	tipo         string    @[required]
@@ -92,7 +93,7 @@ pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
 @[inline]
 pub fn Transacao.last_ten(db sqlite.DB, cliente_id int) ![]Transacao {
 	return sql db {
-		select from Transacao where cliente_id == cliente_id order by realizada_em desc limit 10
+		select from Transacao where cliente_id == cliente_id order by id desc limit 10
 	}!
 }
 
