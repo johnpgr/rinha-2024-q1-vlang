@@ -3,7 +3,7 @@ module main
 import picohttpparser
 import net.http
 import x.json2
-import db.pg
+import db.sqlite
 
 const response_head_ok = 'HTTP/1.1 200 OK\r\n'
 const response_head_not_found = 'HTTP/1.1 404 Not Found\r\n'
@@ -13,7 +13,7 @@ const response_internal_error = 'HTTP/1.1 500 Internal Server Error\r\n'
 
 pub struct App {
 pub mut:
-	db pg.DB @[required]
+	db sqlite.DB @[required]
 }
 
 pub struct Response {

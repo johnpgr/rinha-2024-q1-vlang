@@ -3,14 +3,14 @@ module main
 import time
 import json
 import math
-import db.pg
+import db.sqlite
 
 @[table: 'transacao']
 pub struct Transacao {
 pub mut:
 	cliente_id   int
 	valor        int       @[required]
-	tipo         string    @[required; sql_type: 'CHAR(1)']
+	tipo         string    @[required]
 	descricao    string    @[required]
 	realizada_em time.Time @[required]
 }
@@ -90,15 +90,15 @@ pub fn Transacao.from_json(json_str string, cliente_id int) !&Transacao {
 }
 
 @[inline]
-pub fn Transacao.last_ten(conn pg.DB, cliente_id int) ![]Transacao {
-	return sql conn {
+pub fn Transacao.last_ten(db sqlite.DB, cliente_id int) ![]Transacao {
+	return sql db {
 		select from Transacao where cliente_id == cliente_id order by realizada_em desc limit 10
 	}!
 }
 
 @[inline]
-pub fn (t &Transacao) save(conn pg.DB) ! {
-	sql conn {
+pub fn (t &Transacao) save(db sqlite.DB) ! {
+	sql db {
 		insert t into Transacao
 	}!
 }

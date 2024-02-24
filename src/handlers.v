@@ -10,7 +10,7 @@ pub fn (app &App) handle_extrato(cliente_id int) (string, &Response) {
 
 	return Response.json(Extrato{
 		saldo: struct {
-			total: cliente.saldo.valor
+			total: cliente.saldo
 			data_extrato: fast_time_now()
 			limite: cliente.limite
 		}
@@ -34,36 +34,21 @@ pub fn (app &App) handle_transacao(body string, cliente_id int) (string, &Respon
 		debug('[UNPROCESSABLE] ${err.msg()} ${body}')
 		return Response.unprocessable()
 	}
-
-	db := DB(app.db)
-
-	db.begin()
-	db.xact_lock(cliente_id.str())
-	transacao.save(db) or {
+	transacao.save(app.db) or {
 		debug('[INTERNAL_SERVER_ERROR]${err.msg()} ${body}')
-		db.rollback()
 		return Response.internal_error()
 	}
-	cliente.saldo.save(db) or {
-		debug('[INTERNAL_SERVER_ERROR] ${err.msg()} ${body}')
-		db.rollback()
-		return Response.internal_error()
-	}
-	db.commit()
 
 	return Response.json({
 		'limite': cliente.limite
-		'saldo':  cliente.saldo.valor
+		'saldo':  cliente.saldo
 	})
 }
 
 @[inline]
 fn (app &App) handle_admin_reset() (string, &Response) {
-	db := DB(app.db)
-	db.begin()
-	db.exec('UPDATE "saldo" SET "valor" = 0') or { panic(err) }
-	db.exec('DELETE FROM "transacao"') or { panic(err) }
-	db.commit()
+	app.db.exec('UPDATE "saldo" SET "valor" = 0') or { panic(err) }
+	app.db.exec('DELETE FROM "transacao"') or { panic(err) }
 
 	return Response.ok()
 }

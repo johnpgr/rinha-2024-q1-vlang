@@ -1,30 +1,31 @@
 module main
 
 import time
-import db.pg
+import db.sqlite
 
 @[table: 'cliente']
 pub struct Cliente {
 pub mut:
 	id     int    @[primary; sql: serial]
+	nome   string
 	limite int
-	saldo  &Saldo @[required; sql: '-']
+	saldo  int
 }
 
 @[inline]
 pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 	match t.tipo {
 		'd' {
-			has_limit := (c.saldo.valor - t.valor) >= (c.limite * -1)
+			has_limit := (c.saldo - t.valor) >= (c.limite * -1)
 
 			if !has_limit {
 				return error('ERROR: Transação inválida, saldo insuficiente')
 			}
 
-			c.saldo.valor -= t.valor
+			c.saldo -= t.valor
 		}
 		'c' {
-			c.saldo.valor += t.valor
+			c.saldo += t.valor
 		}
 		else {
 			panic('WTF?')
@@ -33,8 +34,8 @@ pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
 }
 
 @[direct_array_access; inline]
-pub fn Cliente.find(conn pg.DB, id int) ?&Cliente {
-	found := sql conn {
+pub fn Cliente.find(db sqlite.DB, id int) ?&Cliente {
+	found := sql db {
 		select from Cliente where id == id
 	} or { return none }
 
@@ -44,45 +45,13 @@ pub fn Cliente.find(conn pg.DB, id int) ?&Cliente {
 
 	mut cliente := found[0]
 
-	cliente.saldo = Saldo.find(conn, found[0].id)
-
 	return &cliente
 }
 
-@[table: 'saldo']
-pub struct Saldo {
-	id         int @[primary; sql: serial]
-	cliente_id int
-pub mut:
-	valor int
-}
-
-@[direct_array_access; inline]
-pub fn Saldo.find(conn pg.DB, cliente_id int) &Saldo {
-	saldo := sql conn {
-		select from Saldo where cliente_id == cliente_id
-	} or { panic(err) }
-
-	return &saldo[0]
-}
-
-@[direct_array_access; inline]
-pub fn (mut s Saldo) save(conn pg.DB) ! {
-	result := conn.exec_param_many(r'
-		UPDATE "saldo" SET "valor" = $1 WHERE "cliente_id" = $2
-		RETURNING "valor" as "saldo"
-	',
-		[s.valor.str(), s.cliente_id.str()]) or { return error('ERROR: Falha ao atualizar saldo') }
-
-	novo_saldo := result[0].vals[0]
-
-	if novo_saldo == none {
-		return error('ERROR: Falha ao atualizar saldo')
-	}
-
-	// int() casts i64 to int; parse_int(10,32) parses string to a base 10 int 32 bits
-	// this should in theory never panic
-	s.valor = int((novo_saldo as string).parse_int(10, 32) or { panic(err) })
+pub fn (mut c Cliente) save(db sqlite.DB) ! {
+	sql db {
+		update Cliente set saldo = c.saldo where id == c.id
+	}!
 }
 
 pub struct Extrato {

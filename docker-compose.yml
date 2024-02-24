@@ -5,31 +5,18 @@ services:
     build: .
     # image: greidinger/rinha-2024-q1-vlang:latest
     hostname: api1
-    environment:
-      - DB_PORT=5432
-      - DB_USER=user
-      - DB_PASS=1234
-      - DB_NAME=rinha-2024-q1
-      - DB_HOST=database
     restart: unless-stopped
-    depends_on:
-      database:
-        condition: service_healthy
+    volumes:
+      - db_data:/app/data
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "10MB"
+          cpus: "0.65"
+          memory: "250MB"
 
   api2:
     <<: *api
     hostname: api2
-    environment:
-      - DB_PORT=5432
-      - DB_USER=user
-      - DB_PASS=1234
-      - DB_NAME=rinha-2024-q1
-      - DB_HOST=database
 
   nginx:
     image: nginx
@@ -44,32 +31,13 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-          memory: "100MB"
-
-  database:
-    image: postgres:latest
-    hostname: database
-    environment:
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_USER: user
-      POSTGRES_DB: rinha-2024-q1
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d rinha-2024-q1"]
-      interval: 5s
-      timeout: 5s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: "430MB"
-    volumes:
-      - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
+          cpus: "0.2"
+          memory: "50MB"
 
 networks:
   default:
     driver: bridge
-    name: rinha-nginx-2024q1
+    name: rinha-nginx-2024-q1
+
+volumes:
+  db_data:

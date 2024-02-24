@@ -13,6 +13,8 @@ load-test/user-files/results/
 # Ignore binary output folders
 bin/
 
+data/
+
 # Ignore common editor/system specific metadata
 .DS_Store
 .idea/
