@@ -20,7 +20,7 @@ pub fn (mut app App) handle_extrato(cliente_id int) vweb.Result {
 			data_extrato: fast_time_now()
 			limite: cliente.limite
 		}
-		ultimas_transacoes: ultimas_transacoes
+		ultimas_transacoes: ultimas_transacoes.to_response()
 	})
 }
 

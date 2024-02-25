@@ -52,5 +52,5 @@ pub mut:
 		limite       int       @[required]
 	} @[required]
 
-	ultimas_transacoes []Transacao @[required]
+	ultimas_transacoes []TransacaoResponse @[required]
 }
