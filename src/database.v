@@ -9,9 +9,7 @@ const db_pass = os.getenv_opt('DB_PASS') or { panic('DB_PASS not set') }
 const db_host = os.getenv_opt('DB_HOST') or { panic('DB_HOST not set') }
 const db_port = os.getenv_opt('DB_PORT') or { panic('DB_PORT not set') }.int()
 
-type DB = pg.DB
-
-fn DB.connect() DB {
+fn pg_connect() pg.DB {
 	return pg.connect(
 		host: db_host
 		port: db_port
@@ -21,15 +19,14 @@ fn DB.connect() DB {
 	) or { panic(err) }
 }
 
-
-fn (db &DB) xact_lock(cliente_id int) ! {
-	db.exec_param(r'SELECT pg_advisory_xact_lock($1)', cliente_id.str())!
+fn xact_lock(db pg.DB, cliente_id int) {
+	db.exec_param(r'SELECT pg_advisory_xact_lock($1)', cliente_id.str()) or { panic(err) }
 }
 
-fn (db &DB) begin() ! {
-	db.exec('BEGIN')!
+fn begin(db pg.DB) {
+	db.exec('BEGIN') or { panic(err) }
 }
 
-fn (db &DB) commit() ! {
-	db.exec('COMMIT')!
+fn commit(db pg.DB) {
+	db.exec('COMMIT') or { panic(err) }
 }

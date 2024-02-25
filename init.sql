@@ -1,13 +1,8 @@
 CREATE UNLOGGED TABLE IF NOT EXISTS "cliente" (
 	id SERIAL PRIMARY KEY,
-	limite INTEGER NOT NULL
-);
-
-CREATE UNLOGGED TABLE IF NOT EXISTS "saldo" (
-	id SERIAL PRIMARY KEY,
-	cliente_id INTEGER NOT NULL,
-	valor INTEGER NOT NULL,
-	CONSTRAINT fk_cliente_saldo_id FOREIGN KEY (cliente_id) REFERENCES cliente(id)
+	nome VARCHAR(50) NOT NULL,
+	limite INTEGER NOT NULL,
+	saldo INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE UNLOGGED TABLE IF NOT EXISTS "transacao" (
@@ -22,15 +17,12 @@ CREATE UNLOGGED TABLE IF NOT EXISTS "transacao" (
 
 DO $$
 BEGIN
-	INSERT INTO cliente (limite)
+	INSERT INTO cliente (nome, limite)
 	VALUES
-		(100000),
-		(80000),
-		(1000000),
-		(10000000),
-		(500000);
-
-	INSERT INTO saldo (cliente_id, valor)
-		SELECT id, 0 FROM cliente;
+		('o barato sai caro', 1000 * 100),
+		('zan corp ltda', 800 * 100),
+		('les cruders', 10000 * 100),
+		('padaria joia de cocaia', 100000 * 100),
+		('kid mais', 5000 * 100);
 END;
 $$;

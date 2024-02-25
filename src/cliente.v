@@ -7,76 +7,41 @@ import db.pg
 pub struct Cliente {
 pub mut:
 	id     int    @[primary; sql: serial]
+	nome   string
 	limite int
-	saldo  &Saldo @[required; skip]
+	saldo  int
+}
+
+pub fn (c &Cliente) save(db pg.DB) ! {
+	sql db {
+		update Cliente set saldo = c.saldo where id == c.id
+	}!
 }
 
 pub fn (mut c Cliente) efetuar_transacao(t &Transacao) ! {
-	tipo_transacao := TipoTransacao.from_str(t.tipo)!
-
-	match tipo_transacao {
-		.debito {
-			has_limit := c.saldo.valor - t.valor > -c.limite
+	match t.tipo {
+		'd' {
+			has_limit := (c.saldo - t.valor) >= (c.limite * -1)
 
 			if !has_limit {
 				return error('ERROR: Transação inválida, saldo insuficiente')
 			}
 
-			c.saldo.valor -= t.valor
+			c.saldo -= t.valor
 		}
-		.credito {
-			c.saldo.valor += t.valor
+		'c' {
+			c.saldo += t.valor
+		}
+		else {
+			panic('WTF?')
 		}
 	}
 }
 
-pub fn Cliente.find(conn pg.DB, id int) ?&Cliente {
-	found := sql conn {
-		select from Cliente where id == id
-	} or { return none }
-
-	if found.len == 0 {
-		return none
-	}
-
-	mut cliente := found[0]
-
-	cliente.saldo = Saldo.find(conn, found[0].id)
-
-	return &cliente
-}
-
-@[table: 'saldo']
-pub struct Saldo {
-	id         int @[primary; sql: serial]
-	cliente_id int
-pub mut:
-	valor int
-}
-
-pub fn Saldo.find(conn pg.DB, cliente_id int) &Saldo {
-	saldo := sql conn {
-		select from Saldo where cliente_id == cliente_id
-	} or { panic(err) }
-
-	return &saldo[0]
-}
-
-pub fn (mut s Saldo) save(conn pg.DB) ! {
-	result := conn.exec_param_many(r'
-		UPDATE "saldo" SET "valor" = $1 WHERE "cliente_id" = $2
-		RETURNING "valor" as "saldo"
-	',
-		[s.valor.str(), s.cliente_id.str()]) or { return error('ERROR: Falha ao atualizar saldo') }
-
-	novo_saldo := result[0].vals[0]
-
-	if novo_saldo == none {
-		return error('ERROR: Falha ao atualizar saldo')
-	}
-
-	// this should in theory never panic
-	s.valor = int((novo_saldo as string).parse_int(10, 32) or { panic(err) })
+pub fn Cliente.find_all(db pg.DB) []Cliente {
+	return sql db {
+		select from Cliente
+	} or { [] }
 }
 
 pub struct Extrato {
