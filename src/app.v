@@ -6,9 +6,8 @@ import vweb
 
 struct App {
 	vweb.Context
-pub:
-	clientes map[int]Cliente @[required]
 pub mut:
+	clientes  map[int]Cliente         @[required; vweb_global]
 	db        pg.DB
 	db_handle vweb.DatabasePool[pg.DB] @[required]
 }
