@@ -130,8 +130,8 @@ pub fn Transacao.from_req(json_str string, cliente_id int) !&Transacao {
 }
 
 @[inline]
-pub fn (t &Transacao) save(conn pg.DB) ! {
-	sql conn {
+pub fn (t &Transacao) save(db pg.DB) ! {
+	sql db {
 		insert t into Transacao
 	}!
 }
