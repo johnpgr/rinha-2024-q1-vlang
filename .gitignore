@@ -7,9 +7,6 @@ repos
 *.dylib
 *.dll
 
-# Ignore load-test files
-load-test/
-
 # Ignore binary output folders
 bin/
 

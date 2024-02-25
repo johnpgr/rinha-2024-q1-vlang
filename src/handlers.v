@@ -33,7 +33,7 @@ pub fn (mut app App) handle_transacao(cliente_id int) vweb.Result {
 
 	transacao := Transacao.from_json(app.req.data, cliente.id) or {
 		debug('[BAD_REQUEST] ${err.msg()} ${app.req.data}')
-		return app.bad_request()
+		return app.unprocessable()
 	}
 
 	cliente.efetuar_transacao(transacao) or {
