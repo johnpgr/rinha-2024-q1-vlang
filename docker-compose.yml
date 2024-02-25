@@ -6,6 +6,7 @@ services:
     # image: greidinger/rinha-2024-q1-vlang:latest
     hostname: api1
     environment:
+      - PORT=8080
       - DB_PORT=5432
       - DB_USER=user
       - DB_PASS=1234
@@ -25,6 +26,7 @@ services:
     <<: *api
     hostname: api2
     environment:
+      - PORT=8081
       - DB_PORT=5432
       - DB_USER=user
       - DB_PASS=1234

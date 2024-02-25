@@ -1,29 +1,19 @@
-FROM debian
+FROM ubuntu
 
-RUN apt-get -qq update
-RUN apt-get -qy install --no-install-recommends build-essential git clang tcc libpq-dev \
+RUN apt-get update
+RUN apt-get -y install gcc make git libpq-dev \
  && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ && git clone https://github.com/vlang/v --depth=1
 
-ENV PATH=/opt/vlang:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-ENV GIT_SSL_NO_VERIFY=1
-
-WORKDIR /opt/vlang
-
-RUN git clone --depth 1 https://github.com/vlang/v /opt/vlang
-
-RUN git fetch --all --tags && git checkout tags/weekly.2024.08 && make && v -version
-
-RUN ln -s /opt/vlang/v /usr/bin/v
+WORKDIR /v
+RUN make
+RUN /v/v up
 
 WORKDIR /app
-
 COPY ./src /app/src
 
 RUN mkdir /app/bin
 
-RUN v /app/src -prod -o /app/bin/app
+RUN /v/v /app/src -prod -o /app/bin/app
 
 ENTRYPOINT ["/app/bin/app"]
-

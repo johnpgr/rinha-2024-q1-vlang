@@ -1,8 +1,9 @@
 module main
 
 import vweb
+import os
 
-const port = 8080
+const port = os.getenv_opt('PORT') or { '9999' }.int()
 
 fn main() {
 	db := pg_connect()
