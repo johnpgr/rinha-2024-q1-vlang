@@ -2,8 +2,7 @@ version: "3.5"
 
 services:
   api1: &api
-    build: .
-    # image: greidinger/rinha-2024-q1-vlang:latest
+    image: greidinger/rinha-2024-q1-vlang:latest
     hostname: api1
     environment:
       - PORT=8080
