@@ -10,9 +10,7 @@ RUN make
 RUN /v/v up
 
 WORKDIR /app
-COPY main.v /app/main.v
-COPY app.v /app/app.v
-COPY utils.v /app/utils.v
+COPY *.v /app
 
 RUN mkdir /app/bin
 
