@@ -177,12 +177,13 @@ pub fn Cliente.efetuar_transacao(db pg.DB, cliente_id int, valor_transacao i64) 
 
 fn main() {
 	app := &App{
-		db_handle: vweb.database_pool(handler: pg_connect)
+		db_handle: vweb.database_pool(handler: pg_connect, nr_workers: 4)
 	}
 
 	vweb.run_at(app, vweb.RunParams{
 		host: '0.0.0.0'
 		port: port
 		family: .ip
+		nr_workers: 4
 	}) or { panic(err) }
 }
