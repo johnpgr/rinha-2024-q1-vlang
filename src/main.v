@@ -29,62 +29,40 @@ pub struct Cliente {
 pub mut:
 	id     int    @[primary; sql: serial]
 	nome   string
-	limite i64
-	saldo  i64
+	limite int
+	saldo  int
 }
 
 pub struct Extrato {
 pub mut:
 	saldo struct {
-		total        i64       @[required]
+		total        int       @[required]
 		data_extrato time.Time @[required]
-		limite       i64       @[required]
+		limite       int       @[required]
 	} @[required]
 
-	ultimas_transacoes []TransacaoResponse @[required]
+	ultimas_transacoes []Transacao @[required]
 }
 
 @[table: 'transacao']
 pub struct Transacao {
 pub mut:
-	id           int       @[primary; sql: serial]
-	cliente_id   int
-	valor        i64
-	tipo         string
-	descricao    string
-	realizada_em time.Time
-}
-
-pub struct TransacaoRequest {
-	valor     f64    @[required]
-	tipo      string @[required]
-	descricao string @[required]
-}
-
-pub struct TransacaoResponse {
-	valor        i64       @[required]
+	id           int       @[json: '-'; primary; sql: serial]
+	cliente_id   int       @[json: '-'; required]
+	valor        int       @[required]
 	tipo         string    @[required]
 	descricao    string    @[required]
 	realizada_em time.Time @[required]
 }
 
-@[inline]
-pub fn (t &Transacao) to_response() &TransacaoResponse {
-	return &TransacaoResponse{
-		valor: t.valor
-		tipo: t.tipo
-		descricao: t.descricao
-		realizada_em: t.realizada_em
-	}
+pub struct TransacaoRequest {
+	valor     f32    @[required]
+	tipo      string @[required]
+	descricao string @[required]
 }
 
 @[inline]
-pub fn (t []Transacao) to_response() []TransacaoResponse {
-	return t.map(*it.to_response())
-}
-
-@[inline]
-pub fn (t &TransacaoRequest) is_valid() bool {
+pub fn (t TransacaoRequest) is_valid() bool {
 	if t.descricao.is_blank() || t.descricao.len > 10 {
 		return false
 	}
@@ -107,10 +85,10 @@ pub fn (t &TransacaoRequest) is_valid() bool {
 }
 
 @[inline]
-pub fn (t &TransacaoRequest) to_transacao(cliente_id int) &Transacao {
-	return &Transacao{
+pub fn (t TransacaoRequest) to_transacao(cliente_id int) Transacao {
+	return Transacao{
 		cliente_id: cliente_id
-		valor: i64(t.valor)
+		valor: int(t.valor)
 		tipo: t.tipo
 		descricao: t.descricao
 		realizada_em: fast_time_now()
@@ -118,7 +96,7 @@ pub fn (t &TransacaoRequest) to_transacao(cliente_id int) &Transacao {
 }
 
 @[inline]
-pub fn Transacao.from_req(json_str string, cliente_id int) !&Transacao {
+pub fn Transacao.from_req(json_str string, cliente_id int) !Transacao {
 	mut t_req := json.decode(TransacaoRequest, json_str)!
 	if !t_req.is_valid() {
 		return error('Falha ao validar transação')
@@ -130,31 +108,38 @@ pub fn Transacao.from_req(json_str string, cliente_id int) !&Transacao {
 }
 
 @[inline]
-pub fn (t &Transacao) save(db pg.DB) ! {
+pub fn (t Transacao) save(db pg.DB) ! {
 	sql db {
 		insert t into Transacao
 	}!
 }
 
 @[direct_array_access; inline]
-pub fn Cliente.get_extrato(db pg.DB, cliente_id int) ?(&Cliente, []Transacao) {
+pub fn Cliente.get_extrato(db pg.DB, cliente_id int) !Extrato {
 	clientes := sql db {
 		select from Cliente where id == cliente_id limit 1
-	} or { return none }
+	}!
 
 	if clientes.len == 0 {
-		return none
+		return error('Cliente não encontrado')
 	}
 
 	transacoes := sql db {
 		select from Transacao where cliente_id == cliente_id order by id desc limit 10
-	} or { return none }
+	}!
 
-	return &clientes[0], transacoes
+	return Extrato{
+		saldo: struct {
+			total: clientes[0].saldo
+			data_extrato: fast_time_now()
+			limite: clientes[0].limite
+		}
+		ultimas_transacoes: transacoes
+	}
 }
 
 @[direct_array_access; inline]
-pub fn Cliente.efetuar_transacao(db pg.DB, cliente_id int, valor_transacao i64) ?(i64, i64) {
+pub fn Cliente.efetuar_transacao(db pg.DB, cliente_id int, valor_transacao int) ?(int, int) {
 	res := db.exec_param_many(r'
 			UPDATE cliente
 			SET saldo = saldo + $2
@@ -172,18 +157,17 @@ pub fn Cliente.efetuar_transacao(db pg.DB, cliente_id int, valor_transacao i64) 
 	saldo := res[0].vals[0]
 	limite := res[0].vals[1]
 
-	return saldo?.i64(), limite?.i64()
+	return saldo?.int(), limite?.int()
 }
 
 fn main() {
 	app := &App{
-		db_handle: vweb.database_pool(handler: pg_connect, nr_workers: 4)
+		db_handle: vweb.database_pool(handler: pg_connect)
 	}
 
 	vweb.run_at(app, vweb.RunParams{
 		host: '0.0.0.0'
 		port: port
 		family: .ip
-		nr_workers: 4
 	}) or { panic(err) }
 }

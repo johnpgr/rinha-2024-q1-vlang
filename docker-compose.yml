@@ -2,7 +2,8 @@ version: "3.5"
 
 services:
   api1: &api
-    image: greidinger/rinha-2024-q1-vlang:latest
+    build: .
+    # image: greidinger/rinha-2024-q1-vlang:latest
     hostname: api1
     environment:
       - PORT=8080
@@ -19,7 +20,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "10MB"
+          memory: "50MB"
 
   api2:
     <<: *api
@@ -46,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: "30MB"
+          memory: "50MB"
 
   database:
     image: postgres:latest
@@ -63,8 +64,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "8"
-          memory: "500MB"
+          cpus: "0.8"
+          memory: "400MB"
     volumes:
       - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql

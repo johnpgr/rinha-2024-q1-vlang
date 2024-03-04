@@ -16,18 +16,11 @@ pub fn (mut app App) handle_extrato(cliente_id int) vweb.Result {
 	if cliente_id < 1 || cliente_id > 5 {
 		return app.not_found()
 	}
-	cliente, transacoes := Cliente.get_extrato(app.db, cliente_id) or {
+	extrato := Cliente.get_extrato(app.db, cliente_id) or {
 		return app.internal_error()
 	}
 
-	return app.json2(Extrato{
-		saldo: struct {
-			total: cliente.saldo
-			data_extrato: fast_time_now()
-			limite: cliente.limite
-		}
-		ultimas_transacoes: transacoes.to_response()
-	})
+	return app.json2(extrato)
 }
 
 @['/clientes/:id/transacoes'; post]
@@ -68,14 +61,18 @@ fn (mut app App) handle_admin_reset_db() vweb.Result {
 	return app.text('Ok')
 }
 
+
 fn (mut ctx App) json2[T](data T) vweb.Result {
-	mut buffer := []u8{cap: 200}
+	mut buffer := []u8{cap: 2048}
+
 	defer {
 		unsafe { buffer.free() }
 	}
+
 	encoder := json2.Encoder{
 		escape_unicode: false
 	}
+
 	encoder.encode_value(data, mut buffer) or { panic(err) }
 
 	ctx.set_content_type('application/json')

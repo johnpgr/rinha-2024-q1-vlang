@@ -10,10 +10,10 @@ RUN make
 RUN /v/v up
 
 WORKDIR /app
-COPY *.v /app
+COPY /src /app/src
 
 RUN mkdir /app/bin
 
-RUN /v/v /app -prod -o /app/bin/app
+RUN /v/v /app/src -prod -o /app/bin/app
 
 ENTRYPOINT ["/app/bin/app"]
