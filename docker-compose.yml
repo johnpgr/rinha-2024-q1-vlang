@@ -19,7 +19,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
+          cpus: "0.2"
           memory: "50MB"
 
   api2:
@@ -64,7 +64,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.8"
+          cpus: "0.9"
           memory: "400MB"
     volumes:
       - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
